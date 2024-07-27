@@ -5,10 +5,10 @@ using Tools.Enumerable.To.CSV.Model;
 
 namespace Tools.Enumerable.To.CSV.Core;
 
-public class CsvWritter
+public class CsvWritter : ICsvWritter
 {
     private readonly StringBuilder _stringBuilder = new();
-    public MemoryStream WriteAsMemoryStream(IEnumerable<object> csvObject) 
+    public MemoryStream WriteAsMemoryStream(IEnumerable<object> csvObject)
     {
         var response = new MemoryStream();
 
@@ -17,7 +17,7 @@ public class CsvWritter
         streamWritter.Write(ConvertCsvString(csvObject));
         streamWritter.Flush();
         response.Position = 0;
-        return response; 
+        return response;
     }
 
 
@@ -35,9 +35,9 @@ public class CsvWritter
     private void WriteValues(IEnumerable<CsvCell> cells)
     {
         string _tempLine = string.Empty;
-        foreach(var value in cells.Select(c => c.Value))
+        foreach (var value in cells.Select(c => c.Value))
         {
-            _tempLine += value + ";"; 
+            _tempLine += value + ";";
         }
 
         _stringBuilder.AppendLine(_tempLine);

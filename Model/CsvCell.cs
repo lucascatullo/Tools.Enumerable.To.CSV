@@ -4,7 +4,7 @@ using Tools.Enumerable.To.CSV.Attribute;
 
 namespace Tools.Enumerable.To.CSV.Model;
 
-public class CsvCell(string name , string value)
+internal class CsvCell(string name , string value)
 {
     public string Name { get; } = name;
     public string Value { get; } = value;

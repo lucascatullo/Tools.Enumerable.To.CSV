@@ -1,6 +1,8 @@
 ﻿
 
+using System.Reflection;
 using Tools.Enumerable.To.CSV.Attribute;
+using Tools.Enumerable.To.CSV.Extension;
 
 namespace Tools.Enumerable.To.CSV.Model;
 
@@ -17,33 +19,39 @@ internal class CsvCell(string name , string value)
         var type = myObject.GetType();
         var properties = type.GetProperties();
 
-        foreach (var property in properties)
+        properties.RunOverPropertiesWithAttribute((PropertyInfo property, AppendPropertiesToCsvAttribute attribute) =>
+        {
+            var innerObject = property.GetValue(myObject, null);
+            if (innerObject != null)
+                foreach (CsvCell cell in ExtractLines(innerObject))
+                    response.Add(cell);
+        });
+
+        properties.RunOverPropertiesWithAttribute((PropertyInfo property, CsvDataAttribute attribute) =>
         {
 
-            var hasAppendInsideAttribute = property.GetCustomAttributes(typeof(AppendPropertiesToCsvAttribute), true).Any();
-            if (hasAppendInsideAttribute)
-            {
-                var innerObject = property.GetValue(myObject, null);
-                if (innerObject != null)
-                    foreach (CsvCell cell in ExtractLines(innerObject))
-                        response.Add(cell);
-            }
-            else
-            {
-                var attributes = property.GetCustomAttributes(typeof(CsvDataAttribute), true);
+            var propertyValue = property.GetValue(myObject, null);
+            var stringValue = propertyValue != null ? propertyValue.ToString() : "";
 
-                if (attributes.Length == 0) continue;
-
-                var csvAttribute = attributes.First() as CsvDataAttribute;
-                var propertyValue = property.GetValue(myObject, null);
-                var stringValue = propertyValue != null ? propertyValue.ToString() : "";
-
-                response.Add(new CsvCell(csvAttribute!.GetName(), stringValue!));
-            }
-        }
+            response.Add(new CsvCell(attribute.GetName(), stringValue!));
+        });
 
         if (AreCellNamesRepeated(response))
             throw new Exception("Names with the CSV Attribute must be unique. (Check for inneer properties)");  
+
+        return response;
+    }
+
+    public static IList<CsvCell> MapValues(string[] names, string[] values)
+    {
+        List<CsvCell> response = [];
+
+        if (names.Length != values.Length)
+            throw new ArgumentException("The values and the lenght must be equal"); 
+
+        for(int i = 0; i < names.Length; i++)
+             response.Add(new(names[i], values[i]));
+
         return response;
     }
 
